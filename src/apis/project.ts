@@ -249,6 +249,30 @@ const startProjectOCR = ({
   });
 };
 
+interface AddMemberToProjectSetProjectsData {
+  roleID: string;
+}
+
+/** 增量添加成员到该项目所属项目集的所有项目中 */
+const addMemberToProjectSetProjects = ({
+  projectID,
+  userID,
+  data,
+  configs,
+}: {
+  projectID: string;
+  userID: string;
+  data: AddMemberToProjectSetProjectsData;
+  configs?: AxiosRequestConfig;
+}) => {
+  return request({
+    method: 'POST',
+    url: `/v1/projects/${projectID}/users/${userID}/add-to-project-set`,
+    data: toUnderScoreCase(data),
+    ...configs,
+  });
+};
+
 export default {
   getUserProjects,
   getTeamProjects,
@@ -259,4 +283,5 @@ export default {
   startProjectOCR,
   importProject,
   uploadFile,
+  addMemberToProjectSetProjects,
 };

@@ -194,6 +194,40 @@ export const MemberList: FC<MemberListProps> = ({
     });
   };
 
+  /** 增量添加到所属项目集的所有项目确认 */
+  const showBatchAddConfirm = (user: any) => {
+    Modal.confirm({
+      title: formatMessage({ id: 'project.addToAllProjectsTitle', defaultMessage: '批量添加成员' }),
+      content: formatMessage(
+        { id: 'project.addToAllProjectsConfirm', defaultMessage: '确定要将成员 {user} 以当前角色增量添加到该项目集下的所有项目中吗？' },
+        { user: user.name }
+      ),
+      onOk: () => {
+        setSpinningIDs((ids) => [user.id, ...ids]);
+        // 【修改点 2】: 调用 project 相关的 API，传入项目 ID
+        api
+          .addMemberToProjectSetProjects({
+            projectID: currentGroup.id, // 此时 currentGroup 是 Project
+            userID: user.id,
+            data: {
+              roleID: user.role.id, // 当前项目的角色
+            }
+          })
+          .then((result) => {
+            message.success(result.data?.message || formatMessage({ id: 'form.success', defaultMessage: '添加成功' }));
+          })
+          .catch((error) => {
+            error.default();
+          })
+          .finally(() => {
+            setSpinningIDs((ids) => ids.filter((id) => id !== user.id));
+          });
+      },
+      okText: formatMessage({ id: 'form.ok' }),
+      cancelText: formatMessage({ id: 'form.cancel' }),
+    });
+  };
+
   return (
     <List
       className={classNames(['MemberList', className])}
@@ -219,17 +253,50 @@ export const MemberList: FC<MemberListProps> = ({
               logo={<Avatar type="user" url={item.avatar} />}
               name={item.name}
               rightButton={
-                // 创建者无法删除/退出
-                item.role.systemCode !== 'creator' &&
-                can(currentGroup, TEAM_PERMISSION.DELETE_USER) &&
-                currentGroup.role.level > item.role.level && (
-                  <Icon icon="times" />
-                )
+                <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'nowrap' }}>
+                  {/* 纯图标版本的批量添加按钮 */}
+                  {groupType === 'project' && (
+                    <span
+                      style={{
+                        cursor: 'pointer',
+                        color: '#1890ff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        marginRight: '12px' // 和红叉保持一点距离
+                      }}
+                      title="添加到同项目集的所有项目"
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        showBatchAddConfirm(item);
+                      }}
+                    >
+                      {/* 这里使用 plus 图标 */}
+                      <Icon icon="plus" />
+                    </span>
+                  )}
+
+                  {/* 原有的删除(x)按钮 */}
+                  {item.role.systemCode !== 'creator' &&
+                  can(currentGroup, TEAM_PERMISSION.DELETE_USER) &&
+                  currentGroup.role.level > item.role.level && (
+                    <span
+                      style={{
+                        cursor: 'pointer',
+                        color: '#ff4d4f',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                      title={formatMessage({ id: 'form.delete', defaultMessage: '删除' })}
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        showDeleteUserConfirm(item);
+                      }}
+                    >
+                      <Icon icon="times" />
+                    </span>
+                  )}
+                </div>
               }
-              onRightButtonClick={() => {
-                // 显示删除用户模态框
-                showDeleteUserConfirm(item);
-              }}
               content={
                 <div
                   css={css`
