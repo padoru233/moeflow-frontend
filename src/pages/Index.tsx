@@ -10,6 +10,7 @@ import { api } from '../apis';
 
 /** 首页的属性接口 */
 interface IndexProps {}
+
 /**
  * 首页
  */
@@ -30,7 +31,34 @@ export const IndexPage: FC<IndexProps> = () => {
         setHomepageHtml('');
         setHomepageCss('');
       });
+
+      // --- 自动注入 CSP 防白屏 ---
+      const meta = document.createElement('meta');
+      meta.httpEquiv = "Content-Security-Policy";
+      meta.content = "default-src * 'self' data: blob:; script-src * 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src * 'self' 'unsafe-inline'; img-src * 'self' data: blob:;";
+      document.head.appendChild(meta);
   }, []);
+
+  // --- 使用原生 style 确保 100% 显示，不受 emotion 编译影响 ---
+  const KeliBanner = (
+    <div
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        width: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        color: '#ffffff',
+        textAlign: 'center',
+        padding: '10px 0',
+        fontSize: '14px',
+        zIndex: 2147483647, // 最大的整数，确保在最上层
+        fontFamily: 'sans-serif'
+      }}
+    >
+      本站由 <strong style={{ color: '#ffcc00' }}>可力汉化组</strong> 维护与支持
+    </div>
+  );
 
   return homepageHtml === undefined ? (
     <div
@@ -44,6 +72,8 @@ export const IndexPage: FC<IndexProps> = () => {
       `}
     >
       <Spin />
+      {/* 即使在加载中也显示横幅 */}
+      {KeliBanner}
     </div>
   ) : homepageHtml === '' ? (
     <div
@@ -85,6 +115,9 @@ export const IndexPage: FC<IndexProps> = () => {
         <img src={brandJump} alt="Mascot" />
       </div>
       <div className="Index__Footer">{/* 备案号 */}</div>
+
+      {/* 插入横幅 */}
+      {KeliBanner}
     </div>
   ) : (
     <>
@@ -98,6 +131,9 @@ export const IndexPage: FC<IndexProps> = () => {
         className="Index_Homepage"
         dangerouslySetInnerHTML={{ __html: homepageHtml }}
       />
+
+      {/* 插入横幅 */}
+      {KeliBanner}
     </>
   );
 };
