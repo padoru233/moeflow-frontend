@@ -6,6 +6,7 @@ import React, { useEffect, useRef } from 'react';
 import { useIntl } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
 import { DebounceStatus } from '@/components';
+import CopyableBox from '@/components/shared/CopyableBox';
 import { TranslationUser } from '../TranslationUser';
 import { APITranslation } from '@/apis/translation';
 import { FC, File, InputDebounceStatus, Source as ISource } from '@/interfaces';
@@ -436,7 +437,8 @@ export const ImageSourceViewerProofreader: FC<
                 ref={translationTextAreaRef}
               ></TextArea>
             ) : (
-              <div
+              <CopyableBox
+                text={focusedTranslation?.content || ''}
                 className={classNames(
                   'ImageSourceViewerProofreader__TextDisplay',
                   {
@@ -446,7 +448,7 @@ export const ImageSourceViewerProofreader: FC<
                 )}
               >
                 {focusedTranslation?.content}
-              </div>
+              </CopyableBox>
             )}
           </div>
           <div className="ImageSourceViewerProofreader__AreaLine" />

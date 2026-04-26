@@ -6,6 +6,7 @@ import React, { useEffect, useRef } from 'react';
 import { useIntl } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
 import { DebounceStatus, Icon, Tooltip } from '@/components';
+import CopyableBox from '@/components/shared/CopyableBox';
 import { APITranslation } from '@/apis/translation';
 import { PROJECT_PERMISSION } from '@/constants';
 import { FC, Source as ISource } from '@/interfaces';
@@ -264,7 +265,8 @@ export const ImageSourceViewerTranslator: FC<
               <div className="ImageSourceViewerTranslator__TranslationContent">
                 {myContent || myProofreadContent ? (
                   <>
-                    <div
+                    <CopyableBox
+                      text={myProofreadContent || myContent}
                       className={classNames(
                         'ImageSourceViewerTranslator__TranslationContentMine',
                         {
@@ -279,9 +281,12 @@ export const ImageSourceViewerTranslator: FC<
                         status={source.myTranslationContentStatus}
                         tipVisible={false}
                       />
-                    </div>
+                    </CopyableBox>
                     {myProofreadContent && (
-                      <div className="ImageSourceViewerTranslator__TranslationContentMineProofread">
+                      <CopyableBox
+                        text={myProofreadContent}
+                        className="ImageSourceViewerTranslator__TranslationContentMineProofread"
+                      >
                         <Tooltip
                           title={formatMessage({
                             id: 'translation.proofreadFirstTip',
@@ -296,12 +301,15 @@ export const ImageSourceViewerTranslator: FC<
                           </span>
                         </Tooltip>
                         {myProofreadContent}
-                      </div>
+                      </CopyableBox>
                     )}
                   </>
                 ) : (
                   othersBestContent && (
-                    <div className="ImageSourceViewerTranslator__TranslationContentOthersBest">
+                    <CopyableBox
+                      text={othersBestContent}
+                      className="ImageSourceViewerTranslator__TranslationContentOthersBest"
+                    >
                       <Tooltip
                         title={formatMessage({
                           id: 'translation.hasOthersBestContentTip',
@@ -316,7 +324,7 @@ export const ImageSourceViewerTranslator: FC<
                         </span>
                       </Tooltip>
                       {othersBestContent}
-                    </div>
+                    </CopyableBox>
                   )
                 )}
               </div>

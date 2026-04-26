@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
 import { DebounceStatus, Icon, Tooltip } from '@/components';
+import CopyableBox from '@/components/shared/CopyableBox';
 import { PROJECT_PERMISSION } from '@/constants';
 import { FC, Source } from '@/interfaces';
 import { Translation as ITranslation } from '@/interfaces/translation';
@@ -373,7 +374,8 @@ export const Translation: FC<TranslationProps> = ({
             {...textAreaProps}
           />
         ) : (
-          <div
+          <CopyableBox
+            text={translation?.content || ''}
             className={classNames('Translation__ContentDiv', {
               'Translation__ContentDiv--empty': !Boolean(translation?.content),
             })}
@@ -384,7 +386,7 @@ export const Translation: FC<TranslationProps> = ({
                 {formatMessage({ id: 'label.emptyContent' })}
               </>
             )}
-          </div>
+          </CopyableBox>
         )}
       </div>
       {/* 校对部分 */}
@@ -473,7 +475,8 @@ export const Translation: FC<TranslationProps> = ({
                 {...proofreadTextAreaProps}
               />
             ) : (
-              <div
+              <CopyableBox
+                text={translation.proofreadContent || ''}
                 className={classNames('Translation__ProofreadContentDiv', {
                   'Translation__ProofreadContentDiv--empty': !Boolean(
                     translation.proofreadContent,
@@ -481,7 +484,7 @@ export const Translation: FC<TranslationProps> = ({
                 })}
               >
                 {translation.proofreadContent}
-              </div>
+              </CopyableBox>
             )}
           </div>
         )}

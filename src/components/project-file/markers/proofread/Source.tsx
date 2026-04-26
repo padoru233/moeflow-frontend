@@ -6,6 +6,7 @@ import React, { useEffect } from 'react';
 import { useIntl } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
 import { DebounceStatus, Icon, Tooltip } from '@/components';
+import CopyableBox from '@/components/shared/CopyableBox';
 import { APITranslation } from '@/apis/translation';
 import { Source as ISource } from '@/interfaces';
 import { AppState } from '@/store';
@@ -306,7 +307,10 @@ const SourceWithoutRef: React.ForwardRefRenderFunction<
                     handleFocusTranslation(translation);
                   }}
                 >
-                  <div className="ImageSourceViewerProofreaderSource__TranslationContent">
+                  <CopyableBox
+                    text={translation.proofreadContent || translation.content}
+                    className="ImageSourceViewerProofreaderSource__TranslationContent"
+                  >
                     {translation.content}
                     {(isMyTranslation || isNoTranslation) && (
                       <DebounceStatus
@@ -315,9 +319,12 @@ const SourceWithoutRef: React.ForwardRefRenderFunction<
                         tipVisible={false}
                       />
                     )}
-                  </div>
+                  </CopyableBox>
                   {translation.proofreadContent && (
-                    <div className="ImageSourceViewerProofreaderSource__TranslationContentProofread">
+                    <CopyableBox
+                      text={translation.proofreadContent}
+                      className="ImageSourceViewerProofreaderSource__TranslationContentProofread"
+                    >
                       <Tooltip
                         title={formatMessage({
                           id: 'translation.proofreadFirstTip',
@@ -337,7 +344,7 @@ const SourceWithoutRef: React.ForwardRefRenderFunction<
                         status={source.proodreadContentStatuses[translation.id]}
                         tipVisible={false}
                       />
-                    </div>
+                    </CopyableBox>
                   )}
                 </div>
                 <div
