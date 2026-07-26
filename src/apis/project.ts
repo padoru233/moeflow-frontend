@@ -232,6 +232,21 @@ const finishProject = ({
   });
 };
 
+/** 提交当前项目角色的任务完成状态 */
+const completeProjectTask = ({
+  id,
+  configs,
+}: {
+  id: string;
+  configs?: AxiosRequestConfig;
+}) => {
+  return request({
+    method: 'POST',
+    url: `/v1/projects/${id}/task-completion`,
+    ...configs,
+  });
+};
+
 /**
  * @deprecated being retired
  */
@@ -280,6 +295,7 @@ export default {
   createProject,
   editProject,
   finishProject,
+  completeProjectTask,
   startProjectOCR,
   importProject,
   uploadFile,

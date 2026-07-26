@@ -18,6 +18,9 @@ export interface Team {
   role?: Role;
   ocrQuotaMonth: number;
   ocrQuotaUsed: number;
+  robotWebhookEnabled: boolean;
+  robotWebhookUrl: string;
+  robotWebhookGroupID: string;
 }
 // 用户的团队（包含角色）
 export interface UserTeam extends Team {

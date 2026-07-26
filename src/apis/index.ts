@@ -237,7 +237,7 @@ export async function request<T = unknown>(
           // 其他错误
           const result: OtherFailureResult = {
             type: resultTypes.OTHER_FAILURE,
-            default: () => {}, // 什么都不做
+            default: defaultOtherFailure,
           };
           throw result;
         }
@@ -283,6 +283,15 @@ const defaultNetworkFailure = () => {
     content: intl.formatMessage({ id: 'api.networkError' }),
     key: 'requestNetworkError',
     duration: 1,
+  });
+};
+
+/** 服务端异常时默认的行为 */
+const defaultOtherFailure = () => {
+  const intl = getIntl();
+  message.error({
+    content: intl.formatMessage({ id: 'api.serverError' }),
+    key: 'requestOtherFailure',
   });
 };
 

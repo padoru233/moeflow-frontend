@@ -92,6 +92,10 @@ interface EditTeamData {
   allowApplyType: number;
   applicationCheckType: number;
   defaultRole: string;
+  robotWebhookEnabled?: boolean;
+  robotWebhookUrl?: string;
+  robotWebhookAuthToken?: string;
+  robotWebhookGroupID?: string;
 }
 /** 修改团队 */
 const editTeam = ({

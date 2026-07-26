@@ -91,6 +91,13 @@ export const ProjectCreateForm: FC<ProjectCreateFormProps> = ({
         );
         // 弹出提示
         message.success(result.data.message);
+        if (
+          result.data.robot_sync &&
+          !result.data.robot_sync.delivered &&
+          result.data.robot_sync.error !== 'webhook_disabled_or_missing_url'
+        ) {
+          message.warning(result.data.robot_sync.error);
+        }
       })
       .catch((error) => {
         error.default(form);

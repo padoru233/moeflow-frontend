@@ -1,5 +1,5 @@
 import { css } from '@emotion/core';
-import { Button, Form as AntdForm, Input, message } from 'antd';
+import { Button, Form as AntdForm, Input, message, Switch } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
@@ -33,24 +33,31 @@ export const TeamEditForm: FC<TeamEditFormProps> = ({ className }) => {
   const [isAllowApply, setIsAllowApply] = useState(
     currentTeam.allowApplyType !== GROUP_ALLOW_APPLY_TYPE.NONE,
   );
+  const [isRobotWebhookEnabled, setIsRobotWebhookEnabled] = useState(
+    Boolean(currentTeam.robotWebhookEnabled),
+  );
 
-  // id 改变时，获取初始值
+  // 团队数据刷新或保存成功后，回填表单。
   useEffect(() => {
     form.setFieldsValue(toLowerCamelCase(currentTeam));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTeam.id]);
+    setIsRobotWebhookEnabled(Boolean(currentTeam.robotWebhookEnabled));
+  }, [currentTeam, form]);
 
   const handleFinish = (values: any) => {
+    const data = { ...values };
+    if (!data.robotWebhookAuthToken) {
+      delete data.robotWebhookAuthToken;
+    }
     setSubmitting(true);
     api
-      .editTeam({ id: currentTeam.id, data: values })
+      .editTeam({ id: currentTeam.id, data })
       .then((result) => {
-        const data = toLowerCamelCase(result.data);
+        const responseData = toLowerCamelCase(result.data);
         // 修改成功
-        dispatch(editTeam(data.team));
-        dispatch(setCurrentTeam(data.team));
+        dispatch(editTeam(responseData.team));
+        dispatch(setCurrentTeam(responseData.team));
         // 弹出提示
-        message.success(data.message);
+        message.success(responseData.message);
       })
       .catch((error) => {
         error.default(form);
@@ -79,6 +86,9 @@ export const TeamEditForm: FC<TeamEditFormProps> = ({ className }) => {
             setIsAllowApply(
               values.allowApplyType !== GROUP_ALLOW_APPLY_TYPE.NONE,
             );
+          }
+          if (typeof values.robotWebhookEnabled !== 'undefined') {
+            setIsRobotWebhookEnabled(values.robotWebhookEnabled);
           }
         }}
       >
@@ -139,6 +149,72 @@ export const TeamEditForm: FC<TeamEditFormProps> = ({ className }) => {
             typeName="applicationCheckType"
             groupType="team"
             disabled={!can(currentTeam, TEAM_PERMISSION.CHANGE)}
+          />
+        </FormItem>
+        <FormItem
+          name="robotWebhookEnabled"
+          label={formatMessage({ id: 'team.robotWebhookEnabled' })}
+          valuePropName="checked"
+        >
+          <Switch disabled={!can(currentTeam, TEAM_PERMISSION.CHANGE)} />
+        </FormItem>
+        <FormItem
+          style={{ display: isRobotWebhookEnabled ? 'flex' : 'none' }}
+          name="robotWebhookUrl"
+          label={formatMessage({ id: 'team.robotServiceUrl' })}
+          rules={[
+            {
+              required: isRobotWebhookEnabled,
+              message: formatMessage({ id: 'team.robotServiceUrl.required' }),
+            },
+            {
+              type: 'url',
+              message: formatMessage({ id: 'team.robotServiceUrl.invalidUrl' }),
+            },
+          ]}
+        >
+          <Input
+            disabled={!can(currentTeam, TEAM_PERMISSION.CHANGE)}
+            placeholder={formatMessage({ id: 'team.robotServiceUrl.placeholder' })}
+          />
+        </FormItem>
+        <FormItem
+          style={{ display: isRobotWebhookEnabled ? 'flex' : 'none' }}
+          name="robotWebhookAuthToken"
+          label={formatMessage({ id: 'team.robotWebhookAuthToken' })}
+          rules={[
+            {
+              required: isRobotWebhookEnabled,
+              message: formatMessage({ id: 'team.robotWebhookAuthToken.required' }),
+            },
+          ]}
+        >
+          <Input.Password
+            disabled={!can(currentTeam, TEAM_PERMISSION.CHANGE)}
+            placeholder={formatMessage({ id: 'team.robotWebhookAuthToken.placeholder' })}
+          />
+        </FormItem>
+        <FormItem
+          style={{ display: isRobotWebhookEnabled ? 'flex' : 'none' }}
+          name="robotWebhookGroupID"
+          label={formatMessage({ id: 'team.robotWebhookGroupId' })}
+          rules={[
+            {
+              required: isRobotWebhookEnabled,
+              message: formatMessage({ id: 'team.robotWebhookGroupId.required' }),
+            },
+            {
+              pattern: /^\d+$/,
+              message: formatMessage({ id: 'team.robotWebhookGroupId.invalid' }),
+            },
+          ]}
+        >
+          <Input
+            disabled={!can(currentTeam, TEAM_PERMISSION.CHANGE)}
+            inputMode="numeric"
+            placeholder={formatMessage({
+              id: 'team.robotWebhookGroupId.placeholder',
+            })}
           />
         </FormItem>
         <FormItem

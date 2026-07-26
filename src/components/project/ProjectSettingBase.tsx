@@ -48,6 +48,7 @@ export const ProjectSettingBase: FC<ProjectSettingBaseProps> = ({
   const [leaveLoading, setLeaveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [adminJoining, setAdminJoining] = useState(false);
+  const [taskCompletionLoading, setTaskCompletionLoading] = useState(false);
   const currentTeam = useSelector((state: AppState) => state.team.currentTeam);
   const currentProjectSet = useSelector(
     (state: AppState) => state.projectSet.currentProjectSet,
@@ -57,6 +58,27 @@ export const ProjectSettingBase: FC<ProjectSettingBaseProps> = ({
   ) as Project;
   const userID = useSelector((state: AppState) => state.user.id);
   const [permissionsVisible, setPermissionsVisible] = useState(false);
+  const canCompleteCurrentTask = [
+    'translator',
+    'proofreader',
+    'picture_editor',
+    'coordinator',
+  ].includes(currentProject.role.systemCode || '');
+
+  const completeCurrentTask = () => {
+    setTaskCompletionLoading(true);
+    api
+      .completeProjectTask({ id: currentProject.id })
+      .then((result) => {
+        if (result.data.delivered) {
+          message.success(formatMessage({ id: 'project.taskCompletionSent' }));
+        } else {
+          message.error(result.data.error);
+        }
+      })
+      .catch((error) => error.default())
+      .finally(() => setTaskCompletionLoading(false));
+  };
 
   /** 完结项目 */
   const finishProject = () => {
@@ -64,14 +86,13 @@ export const ProjectSettingBase: FC<ProjectSettingBaseProps> = ({
     api
       .finishProject({ id: currentProject.id })
       .then((result) => {
-        setDeleteLoading(false);
         const finishedProject = {
           ...currentProject,
           status: PROJECT_STATUS.FINISHED,
         };
         dispatch(deleteProject(finishedProject));
         dispatch(setCurrentProject(finishedProject));
-        // 弹出提示
+        setDeleteLoading(false);
         message.success(result.data.message);
       })
       .catch((error) => {
@@ -225,6 +246,17 @@ export const ProjectSettingBase: FC<ProjectSettingBaseProps> = ({
           <ContentItem>
             <Button block onClick={adminNewProject} loading={adminJoining}>
               {formatMessage({ id: 'project.join' })}
+            </Button>
+          </ContentItem>
+        )}
+        {canCompleteCurrentTask && (
+          <ContentItem>
+            <Button
+              block
+              onClick={completeCurrentTask}
+              loading={taskCompletionLoading}
+            >
+              {formatMessage({ id: 'project.completeCurrentTask' })}
             </Button>
           </ContentItem>
         )}
