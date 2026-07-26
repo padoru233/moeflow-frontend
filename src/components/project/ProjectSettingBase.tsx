@@ -72,8 +72,8 @@ export const ProjectSettingBase: FC<ProjectSettingBaseProps> = ({
       .then((result) => {
         if (result.data.delivered) {
           message.success(formatMessage({ id: 'project.taskCompletionSent' }));
-        } else {
-          message.error(result.data.error);
+        } else if (result.data.error !== 'webhook_disabled_or_missing_url') {
+          message.warning('机器人播报失败');
         }
       })
       .catch((error) => error.default())
@@ -94,6 +94,13 @@ export const ProjectSettingBase: FC<ProjectSettingBaseProps> = ({
         dispatch(setCurrentProject(finishedProject));
         setDeleteLoading(false);
         message.success(result.data.message);
+        if (
+          result.data.robot_sync &&
+          !result.data.robot_sync.delivered &&
+          result.data.robot_sync.error !== 'webhook_disabled_or_missing_url'
+        ) {
+          message.warning('机器人播报失败');
+        }
       })
       .catch((error) => {
         error.default();

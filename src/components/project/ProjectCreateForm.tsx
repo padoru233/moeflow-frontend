@@ -96,7 +96,7 @@ export const ProjectCreateForm: FC<ProjectCreateFormProps> = ({
           !result.data.robot_sync.delivered &&
           result.data.robot_sync.error !== 'webhook_disabled_or_missing_url'
         ) {
-          message.warning(result.data.robot_sync.error);
+          message.warning('机器人播报失败');
         }
       })
       .catch((error) => {
