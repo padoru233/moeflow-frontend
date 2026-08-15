@@ -480,6 +480,7 @@ const MovableItemWithoutRef: React.ForwardRefRenderFunction<
   const sizeRef = useRef({ width: 0, height: 0 }); // 组件未缩放的大小
   const domRef = useRef<HTMLDivElement>(null); // 节点自身 Ref
   const longPressTimeoutRef = useRef(-1);
+  const longPressTriggeredRef = useRef(false);
   const allowMoveRef = useRef(allowMove);
   const _mountedRef = useRef(true);
 
@@ -952,6 +953,7 @@ const MovableItemWithoutRef: React.ForwardRefRenderFunction<
     // 记录按下时组件初始 state
     startStateRef.current = stateRef.current;
     if (size(pointersRef.current) === 1) {
+      longPressTriggeredRef.current = false;
       // 1个光标按下，开启移动
       movingRef.current = button === 0;
       zoomingRef.current = false;
@@ -997,6 +999,8 @@ const MovableItemWithoutRef: React.ForwardRefRenderFunction<
             if (longPressX < 0) longPressX = 0;
             if (longPressY < 0) longPressY = 0;
             if (distance < 5) {
+              longPressTriggeredRef.current = true;
+              movingRef.current = false;
               onLongPress({
                 x: longPressX,
                 y: longPressY,
@@ -1166,6 +1170,10 @@ const MovableItemWithoutRef: React.ForwardRefRenderFunction<
     if (!has(pointersRef.current, pointerId)) {
       return;
     }
+    if (longPressTimeoutRef.current > -1) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = -1;
+    }
     // 删除光标
     delete pointersRef.current[pointerId];
     if (size(pointersRef.current) === 0) {
@@ -1179,7 +1187,12 @@ const MovableItemWithoutRef: React.ForwardRefRenderFunction<
       );
       // 抬起后就没了，移动结束
       movingRef.current = false;
-      if (allowMoveRef.current && limitInArea && button === 0) {
+      if (
+        !longPressTriggeredRef.current &&
+        allowMoveRef.current &&
+        limitInArea &&
+        button === 0
+      ) {
         // 限制移动范围，将超出的部分移动到合适位置
         setState((prevState) => {
           // 组件新位置
@@ -1194,7 +1207,12 @@ const MovableItemWithoutRef: React.ForwardRefRenderFunction<
         });
       }
       // 执行移动结束回调
-      if (allowMoveRef.current && onMoveEnd && button === 0) {
+      if (
+        !longPressTriggeredRef.current &&
+        allowMoveRef.current &&
+        onMoveEnd &&
+        button === 0
+      ) {
         const startX = startStateRef.current.x;
         const startY = startStateRef.current.y;
         onMoveEnd({
@@ -1205,7 +1223,12 @@ const MovableItemWithoutRef: React.ForwardRefRenderFunction<
         });
       }
       // 检查是否需要触发 tap 事件
-      if (onTap && tapDelay < 500 && (distance < 5 || button !== 0)) {
+      if (
+        !longPressTriggeredRef.current &&
+        onTap &&
+        tapDelay < 500 &&
+        (distance < 5 || button !== 0)
+      ) {
         // 计算 tap 位置
         let tapX =
           (startMoveInfoRef.current.clientX -

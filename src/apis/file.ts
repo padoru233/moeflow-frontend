@@ -8,6 +8,42 @@ import { PaginationParams } from '.';
 import { File } from '@/interfaces';
 import { FileSafeStatuses } from '@/constants';
 
+export interface ServerImportEntry {
+  name: string;
+  path: string;
+  type: 'directory' | 'file';
+}
+
+const getServerImportDirectory = ({
+  projectID,
+  directory,
+}: {
+  projectID: string;
+  directory?: string;
+}) =>
+  request<{ directory: string; entries: ServerImportEntry[] }>({
+    method: 'GET',
+    url: `/v1/projects/${projectID}/server-imports`,
+    params: { directory },
+  });
+
+const importServerArchive = ({
+  projectID,
+  archivePath,
+}: {
+  projectID: string;
+  archivePath: string;
+}) => {
+  return request<{ files: File[] }>({
+    method: 'POST',
+    url: `/v1/projects/${projectID}/server-imports`,
+    data: `archive_path=${encodeURIComponent(archivePath)}`,
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  });
+};
+
 /** 获取项目中文件列表的请求数据 */
 interface GetProjectFilesParams {
   target?: string;
@@ -112,6 +148,8 @@ const adminSafeCheck = ({
 };
 
 export default {
+  getServerImportDirectory,
+  importServerArchive,
   getProjectFiles,
   getFile,
   deleteFile,

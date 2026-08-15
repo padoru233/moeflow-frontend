@@ -560,6 +560,27 @@ project.importProject:
 project.startImport:
   zhCn: 开始导入
   en: Start Import
+file.serverImport:
+  zhCn: 从服务器导入图源
+  en: Import image sources from server
+file.importServerArchive:
+  zhCn: 导入图源
+  en: Import image sources
+file.selectServerArchive:
+  zhCn: 选择压缩包
+  en: Select archive
+file.serverImportParentDirectory:
+  zhCn: 上级目录
+  en: Parent directory
+file.openServerImportDirectory:
+  zhCn: 打开
+  en: Open
+file.serverImportEmpty:
+  zhCn: 此目录为空
+  en: This directory is empty
+file.refreshServerImportDirectory:
+  zhCn: 刷新目录
+  en: Refresh directory
 project.finishTip:
   zhCn: 此操作将删除此项目的所有文件和图片。
   en: This action will delete all files and images for this item.
@@ -653,8 +674,8 @@ file.uploadFail:
   zhCn: '{name} 上传失败'
   en: '"{name} upload failed"'
 file.uploadTip1:
-  zhCn: 点击“上传”按钮 或 拖放、黏贴文件到这来上传吧
-  en: Click the "Upload" button or drag or paste files here to upload.
+  zhCn: 支持单个或批量文件上传，目前支持这些后缀的文件 .jpg, .jpeg, .png, .bmp, .gif, .webp（不区分大小写）
+  en: Supports single or multi file uploads. Currently supports these file extensions: .jpg, .jpeg, .png, .bmp, .gif, .webp (case insensitive).
 file.uploadTip2:
   zhCn: 支持单个或批量文件上传，目前支持这些后缀的文件 .jpg, .jpeg, .png, .bmp, .gif（不区分大小写）
   en: 'Supports single or multi file uploads. Currently supports these file extensions:

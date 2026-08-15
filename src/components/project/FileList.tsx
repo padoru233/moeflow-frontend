@@ -11,6 +11,7 @@ import { Button, EmptyTip, List } from '@/components';
 import { OutputList } from './OutputList';
 import { FileItem } from './FileItem';
 import { api, resultTypes } from '@/apis';
+import { ServerImportEntry } from '@/apis/file';
 import {
   FILE_NOT_EXIST_REASON,
   FILE_SAFE_STATUS,
@@ -63,6 +64,12 @@ export const FileList: FC<FileListProps> = ({
   const platform = useSelector((state: AppState) => state.site.platform);
   const isMobile = platform === 'mobile';
   const [outputDrawerVisible, setOutputDrawerVisible] = useState(false);
+  const [serverImportVisible, setServerImportVisible] = useState(false);
+  const [serverDirectory, setServerDirectory] = useState('');
+  const [serverEntries, setServerEntries] = useState<ServerImportEntry[]>([]);
+  const [serverDirectoryLoading, setServerDirectoryLoading] = useState(false);
+  const [serverArchivePath, setServerArchivePath] = useState<string>();
+  const [serverImporting, setServerImporting] = useState(false);
   const coverWidth = IMAGE_COVER.WIDTH;
   const coverHeight = IMAGE_COVER.HEIGHT;
 
@@ -93,6 +100,61 @@ export const FileList: FC<FileListProps> = ({
   const openInTranslator = (file: MFile) => {
     history.push(routes.imageTranslator.build(file.id, target.id));
   };
+
+  const loadServerDirectory = (directory = '') => {
+    setServerDirectoryLoading(true);
+    api.file
+      .getServerImportDirectory({ projectID: project.id, directory })
+      .then((result) => {
+        setServerDirectory(result.data.directory);
+        setServerEntries(result.data.entries);
+      })
+      .catch((error) => error.default())
+      .finally(() => setServerDirectoryLoading(false));
+  };
+
+  const openServerImport = () => {
+    setServerImportVisible(true);
+    loadServerDirectory();
+  };
+
+  const importServerArchive = () => {
+    if (!serverArchivePath) {
+      return;
+    }
+    setServerImporting(true);
+    api.file
+      .importServerArchive({
+        projectID: project.id,
+        archivePath: serverArchivePath,
+      })
+      .then((result) => {
+        setItems((items) => [
+          ...result.data.files.map((file) => toLowerCamelCase(file)),
+          ...items,
+        ]);
+        setServerImportVisible(false);
+        setServerArchivePath(undefined);
+      })
+      .catch((error) => {
+        if (error.type === resultTypes.VALIDATION_FAILURE) {
+          const validationMessages = Object.values(error.data.message) as string[][];
+          message.error(
+            validationMessages
+              .map((messages) => messages.join('\n'))
+              .join('\n'),
+          );
+          return;
+        }
+        error.default();
+      })
+      .finally(() => setServerImporting(false));
+  };
+
+  const parentServerDirectory = serverDirectory
+    .split('/')
+    .slice(0, -1)
+    .join('/');
 
   const deleteFile = (file: MFile) => {
     Modal.confirm({
@@ -422,6 +484,15 @@ export const FileList: FC<FileListProps> = ({
         )}
         {can(project, PROJECT_PERMISSION.ADD_FILE) && (
           <Button
+            icon="folder-open"
+            tooltipProps={{
+              overlay: formatMessage({ id: 'file.serverImport' }),
+            }}
+            onClick={openServerImport}
+          />
+        )}
+        {can(project, PROJECT_PERMISSION.ADD_FILE) && (
+          <Button
             icon="plus"
             onClick={() => {
               filePondRef.current?.browse();
@@ -594,6 +665,54 @@ export const FileList: FC<FileListProps> = ({
           selectedFileIds={selectedFileIds}
         />
       </Drawer>
+      <Modal
+        title={formatMessage({ id: 'file.serverImport' })}
+        open={serverImportVisible}
+        okButtonProps={{ disabled: !serverArchivePath, loading: serverImporting }}
+        okText={formatMessage({ id: 'file.importServerArchive' })}
+        onOk={importServerArchive}
+        onCancel={() => setServerImportVisible(false)}
+      >
+        <AntdButton
+          disabled={!serverDirectory || serverDirectoryLoading}
+          onClick={() => loadServerDirectory(parentServerDirectory)}
+        >
+          {formatMessage({ id: 'file.serverImportParentDirectory' })}
+        </AntdButton>
+        <AntdButton
+          loading={serverDirectoryLoading}
+          onClick={() => loadServerDirectory(serverDirectory)}
+        >
+          {formatMessage({ id: 'file.refreshServerImportDirectory' })}
+        </AntdButton>
+        <div>{serverDirectory || '/'}</div>
+        {serverEntries.length === 0 && !serverDirectoryLoading ? (
+          <p>{formatMessage({ id: 'file.serverImportEmpty' })}</p>
+        ) : (
+          serverEntries.map((entry) => (
+            <div key={entry.path}>
+              {entry.type === 'directory' ? `${entry.name}/` : entry.name}
+              {entry.type === 'directory' ? (
+                <AntdButton onClick={() => loadServerDirectory(entry.path)}>
+                  {formatMessage({ id: 'file.openServerImportDirectory' })}
+                </AntdButton>
+              ) : (
+                <AntdButton
+                  disabled={
+                    !['.zip', '.cbz'].some((suffix) =>
+                      entry.name.toLowerCase().endsWith(suffix),
+                    )
+                  }
+                  type={serverArchivePath === entry.path ? 'primary' : 'default'}
+                  onClick={() => setServerArchivePath(entry.path)}
+                >
+                  {formatMessage({ id: 'file.selectServerArchive' })}
+                </AntdButton>
+              )}
+            </div>
+          ))
+        )}
+      </Modal>
       {aiModalHolder}
     </div>
   );
