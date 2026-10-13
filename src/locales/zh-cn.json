@@ -167,6 +167,7 @@
   "project.finish": "完结项目",
   "project.completeCurrentTask": "完成当前工序",
   "project.taskCompletionSent": "已提交任务完成通知",
+  "project.sourceArchive": "图源压缩包（ZIP / CBZ）",
   "project.name": "项目名称",
   "project.intro": "项目介绍",
   "team.robotWebhookEnabled": "连接机器人",

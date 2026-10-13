@@ -167,6 +167,7 @@
   "project.finish": "Mark Project as complete",
   "project.completeCurrentTask": "Complete current task",
   "project.taskCompletionSent": "Task completion submitted",
+  "project.sourceArchive": "Source archive (ZIP / CBZ)",
   "project.name": "Project Name",
   "project.intro": "Project Description",
   "team.robotWebhookEnabled": "Connect Robot",

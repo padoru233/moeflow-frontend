@@ -15,6 +15,8 @@ import { GROUP_ALLOW_APPLY_TYPE } from '@/constants';
 import { configs } from '@/configs';
 import style from '@/style';
 import { resetFilesState } from '@/store/file/slice';
+import * as zip from '@zip.js/zip.js';
+import { RcFile } from 'antd/lib/upload';
 
 /** 创建项目表单的属性接口 */
 interface ProjectCreateFormProps {
@@ -50,6 +52,7 @@ export const ProjectCreateForm: FC<ProjectCreateFormProps> = ({
   ]);
   const [supportLabelplusTXT, setSupportLabelplusTXT] = useState(true);
   const [labelplusTXT, setLabelplusTXT] = useState<string>();
+  const [sourceArchive, setSourceArchive] = useState<RcFile>();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [formFinishValues, setFormFinishValues] = useState<any>();
 
@@ -67,6 +70,39 @@ export const ProjectCreateForm: FC<ProjectCreateFormProps> = ({
     setIsModalVisible(false);
   };
 
+  const uploadSourceArchive = async (projectID: string) => {
+    if (!sourceArchive) {
+      return;
+    }
+
+    const archive = new zip.ZipReader(new zip.BlobReader(sourceArchive));
+    try {
+      const entries = await archive.getEntries();
+      const imageEntries = entries.filter(
+        (entry) =>
+          !entry.directory &&
+          /\.(avif|bmp|gif|jpe?g|png|webp)$/i.test(entry.filename),
+      );
+      if (imageEntries.length === 0) {
+        throw new Error('压缩包内没有可导入的图片');
+      }
+
+      for (const entry of imageEntries) {
+        const image = await entry.getData?.(new zip.BlobWriter());
+        if (!image) {
+          throw new Error(`无法读取压缩包内图片：${entry.filename}`);
+        }
+        const filename = entry.filename.split('/').pop();
+        if (!filename) {
+          throw new Error(`压缩包内图片名称无效：${entry.filename}`);
+        }
+        await api.project.uploadFile({ projectID, filename, file: image });
+      }
+    } finally {
+      await archive.close();
+    }
+  };
+
   const handleFinish = (values: any) => {
     setSubmitting(true);
     api.project
@@ -74,8 +110,7 @@ export const ProjectCreateForm: FC<ProjectCreateFormProps> = ({
         teamID: currentTeam.id,
         data: { ...values, labelplusTXT },
       })
-      .then((result) => {
-        setSubmitting(false);
+      .then(async (result) => {
         // 创建成功
         dispatch(
           createProject({
@@ -85,12 +120,19 @@ export const ProjectCreateForm: FC<ProjectCreateFormProps> = ({
         );
         dispatch(resetFilesState());
         dispatch(resetProjectsState());
-        // 跳转到项目
-        history.replace(
-          `/dashboard/teams/${teamID}/project-sets/${projectSetID}/projects/${result.data.project.id}`,
-        );
-        // 弹出提示
-        message.success(result.data.message);
+        try {
+          await uploadSourceArchive(result.data.project.id);
+          message.success(result.data.message);
+        } catch (error) {
+          message.error(
+            error instanceof Error ? error.message : '图源压缩包上传失败',
+          );
+        } finally {
+          setSubmitting(false);
+          history.replace(
+            `/dashboard/teams/${teamID}/project-sets/${projectSetID}/projects/${result.data.project.id}`,
+          );
+        }
         if (
           result.data.robot_sync &&
           !result.data.robot_sync.delivered &&
@@ -131,6 +173,9 @@ export const ProjectCreateForm: FC<ProjectCreateFormProps> = ({
           width: 100%;
           margin-top: 10px;
           height: 80px;
+        }
+        .ProjectCreateForm__Archive {
+          margin-bottom: 24px;
         }
       `}
     >
@@ -263,6 +308,32 @@ export const ProjectCreateForm: FC<ProjectCreateFormProps> = ({
           {/* 用于提交 project set id */}
           <Input />
         </FormItem>
+        <div className="ProjectCreateForm__Archive">
+          <div className="ProjectCreateForm__TXTUpload">
+            <div className="ProjectCreateForm__Label">
+              {formatMessage({ id: 'project.sourceArchive' })}
+            </div>
+            {sourceArchive ? (
+              <Button onClick={() => setSourceArchive(undefined)}>
+                {formatMessage({ id: 'site.delete' })}
+              </Button>
+            ) : (
+              <Upload
+                accept=".zip,.cbz"
+                beforeUpload={(file) => {
+                  setSourceArchive(file);
+                  return false;
+                }}
+                maxCount={1}
+              >
+                <Button>{formatMessage({ id: 'site.upload' })}</Button>
+              </Upload>
+            )}
+          </div>
+          {sourceArchive && (
+            <div className="ProjectCreateForm__Tip">{sourceArchive.name}</div>
+          )}
+        </div>
         <div className="ProjectCreateForm__TXT">
           <div className="ProjectCreateForm__TXTUpload">
             <div className="ProjectCreateForm__Label">

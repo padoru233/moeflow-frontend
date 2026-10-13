@@ -17,6 +17,7 @@ import {
 import { ProjectFinishedTip } from '@/components/project/ProjectFinishedTip';
 import { ProjectTargetList } from '@/components/project/ProjectTargetList';
 import { ProjectImportFromLabelplusStatus } from '@/components/project/ProjectImportFromLabelplusStatus';
+import { ProjectTaskCompletionButton } from '@/components/project/ProjectTaskCompletionButton';
 
 /** 项目文件页的属性接口 */
 interface ProjectFilesProps {
@@ -76,6 +77,15 @@ const ProjectFiles: FC<ProjectFilesProps> = ({ project }) => {
           .ListItem__Logo {
             color: ${style.primaryColor};
           }
+          .Project__TaskCompletion {
+            flex: none;
+            display: flex;
+            justify-content: flex-end;
+            padding: 12px 16px 0;
+          }
+          .Project__TaskCompletion:empty {
+            display: none;
+          }
           .ListItem__Name {
             color: ${style.primaryColor};
             font-weight: bold;
@@ -90,6 +100,9 @@ const ProjectFiles: FC<ProjectFilesProps> = ({ project }) => {
     return cloneElement(
       wrapper,
       undefined,
+      <div className="Project__TaskCompletion">
+        <ProjectTaskCompletionButton project={project} />
+      </div>,
       targets && (
         <ListItem
           disabled={true}
@@ -151,6 +164,9 @@ const ProjectFiles: FC<ProjectFilesProps> = ({ project }) => {
   return cloneElement(
     wrapper,
     undefined,
+    <div className="Project__TaskCompletion">
+      <ProjectTaskCompletionButton project={project} />
+    </div>,
     <FileList
       project={project}
       target={currentTarget}
