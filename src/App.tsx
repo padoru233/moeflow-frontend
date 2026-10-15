@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import ImageTranslator from './pages/ImageTranslator';
 import { IndexPage } from './pages/Index';
 import Login from './pages/Login';
+import BotAuthorize from './pages/BotAuthorize';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import { NotFoundPage } from './pages/404';
@@ -18,6 +19,7 @@ import { routes } from './pages/routes';
 const publicPaths = [
   routes.index,
   routes.login,
+  routes.botAuthorize,
   routes.signUp,
   routes.resetPassword,
 ] as readonly string[];
@@ -154,6 +156,9 @@ const App: React.FC = () => {
           </Route>
           <Route path={routes.login}>
             <Login />
+          </Route>
+          <Route path={routes.botAuthorize}>
+            <BotAuthorize />
           </Route>
           <Route path={routes.signUp}>
             <Register />

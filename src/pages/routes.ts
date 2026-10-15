@@ -1,6 +1,7 @@
 export const routes = {
   index: '/',
   login: '/login',
+  botAuthorize: '/authorize',
   signUp: '/register',
   resetPassword: '/reset-password',
   dashboard: {

@@ -17,6 +17,7 @@ import { setUserToken } from '@/store/user/slice';
 import { toFormErrors, toLowerCamelCase } from '@/utils';
 import application from './application';
 import auth from './auth';
+import botAuthorization from './botAuthorization';
 import file from './file';
 import invitation from './invitation';
 import language from './language';
@@ -300,6 +301,7 @@ export const api = {
   // TODO switch to this nested  / drop use of default export
   application,
   auth,
+  botAuthorization,
   file,
   group,
   insight,

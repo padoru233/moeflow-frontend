@@ -3,7 +3,7 @@ import { Button, Input, Switch, Form as AntdForm, InputRef } from 'antd';
 import React, { useRef } from 'react';
 import { useIntl } from 'react-intl';
 import { useDispatch } from 'react-redux';
-import { useHistory } from 'react-router';
+import { useHistory, useLocation } from 'react-router';
 import { FailureResults, resultTypes, api } from '../apis';
 import {
   AuthFormWrapper,
@@ -33,6 +33,7 @@ const Login: FC<LoginProps> = ({ beforeRedirect = false } = {}) => {
   const { formatMessage } = useIntl(); // i18n
   useTitle({ prefix: formatMessage({ id: 'auth.login' }) }); // 设置标题
   const history = useHistory();
+  const location = useLocation();
   const dispatch = useDispatch();
   const [form] = AntdForm.useForm();
   const captchaInputRef = useRef<CAPTCHAInputRef>(null);
@@ -61,8 +62,12 @@ const Login: FC<LoginProps> = ({ beforeRedirect = false } = {}) => {
             rememberMe: values.rememberMe,
           }),
         );
-        // 跳转到仪表盘
-        history.push('/dashboard/projects');
+        const returnTo = new URLSearchParams(location.search).get('return_to');
+        if (returnTo?.startsWith('/authorize')) {
+          history.replace(returnTo);
+        } else {
+          history.push('/dashboard/projects');
+        }
       })
       .catch((result: FailureResults) => {
         if (result.type === resultTypes.VALIDATION_FAILURE) {
