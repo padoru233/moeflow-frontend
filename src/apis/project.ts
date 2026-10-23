@@ -10,6 +10,7 @@ import {
 } from '../constants';
 import { Language, Project, ProjectSet, Role, Team } from '../interfaces';
 import { toUnderScoreCase } from '../utils';
+import type { UploadFileResult } from './file';
 
 export interface APIProject {
   groupType: 'project';
@@ -177,7 +178,7 @@ const uploadFile = ({
   const formData = new FormData();
   formData.append('file', new File([file], filename));
 
-  return request({
+  return request<UploadFileResult>({
     method: 'POST',
     url: `/v1/projects/${projectID}/files`,
     data: formData,

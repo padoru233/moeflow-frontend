@@ -11,7 +11,7 @@ import { Button, EmptyTip, List } from '@/components';
 import { OutputList } from './OutputList';
 import { FileItem } from './FileItem';
 import { api, resultTypes } from '@/apis';
-import { ServerImportEntry } from '@/apis/file';
+import { isArchiveImportResult } from '@/apis/file';
 import {
   FILE_NOT_EXIST_REASON,
   FILE_SAFE_STATUS,
@@ -30,6 +30,17 @@ import { routes } from '@/pages/routes';
 import { ListPageSpec } from '@/components/shared/List';
 import { FilePondFile } from 'filepond';
 import { createDebugLogger } from '@/utils/debug-logger';
+import { getCancelToken } from '@/utils/api';
+import {
+  addArchiveResult,
+  emptySummary,
+  getReasonFromResponseBody,
+  importServerArchives,
+  isArchiveFilename,
+  reportSourceSummary,
+  SOURCE_FILE_ACCEPT,
+} from '@/utils/sourceUpload';
+import { ServerImportModal } from './ServerImportModal';
 import { useAiTranslate } from '@/components/ai';
 
 /** 文件列表的属性接口 */
@@ -65,10 +76,6 @@ export const FileList: FC<FileListProps> = ({
   const isMobile = platform === 'mobile';
   const [outputDrawerVisible, setOutputDrawerVisible] = useState(false);
   const [serverImportVisible, setServerImportVisible] = useState(false);
-  const [serverDirectory, setServerDirectory] = useState('');
-  const [serverEntries, setServerEntries] = useState<ServerImportEntry[]>([]);
-  const [serverDirectoryLoading, setServerDirectoryLoading] = useState(false);
-  const [serverArchivePath, setServerArchivePath] = useState<string>();
   const [serverImporting, setServerImporting] = useState(false);
   const coverWidth = IMAGE_COVER.WIDTH;
   const coverHeight = IMAGE_COVER.HEIGHT;
@@ -101,61 +108,20 @@ export const FileList: FC<FileListProps> = ({
     history.push(routes.imageTranslator.build(file.id, target.id));
   };
 
-  const loadServerDirectory = (directory = '') => {
-    setServerDirectoryLoading(true);
-    api.file
-      .getServerImportDirectory({ projectID: project.id, directory })
-      .then((result) => {
-        setServerDirectory(result.data.directory);
-        setServerEntries(result.data.entries);
-      })
-      .catch((error) => error.default())
-      .finally(() => setServerDirectoryLoading(false));
-  };
-
-  const openServerImport = () => {
-    setServerImportVisible(true);
-    loadServerDirectory();
-  };
-
-  const importServerArchive = () => {
-    if (!serverArchivePath) {
-      return;
-    }
+  const importSelectedServerArchives = (paths: string[]) => {
     setServerImporting(true);
-    api.file
-      .importServerArchive({
-        projectID: project.id,
-        archivePath: serverArchivePath,
-      })
-      .then((result) => {
-        setItems((items) => [
-          ...result.data.files.map((file) => toLowerCamelCase(file)),
-          ...items,
-        ]);
+    importServerArchives({
+      projectID: project.id,
+      archivePaths: paths,
+      failureFallback: formatMessage({ id: 'file.importFailed' }),
+    })
+      .then((summary) => {
+        reportSourceSummary(formatMessage, summary);
         setServerImportVisible(false);
-        setServerArchivePath(undefined);
-      })
-      .catch((error) => {
-        if (error.type === resultTypes.VALIDATION_FAILURE) {
-          const validationMessages = Object.values(error.data.message) as string[][];
-          message.error(
-            validationMessages
-              .map((messages) => messages.join('\n'))
-              .join('\n'),
-          );
-          return;
-        }
-        error.default();
+        reloadFiles();
       })
       .finally(() => setServerImporting(false));
   };
-
-  const parentServerDirectory = serverDirectory
-    .split('/')
-    .slice(0, -1)
-    .join('/');
-
   const deleteFile = (file: MFile) => {
     Modal.confirm({
       title: formatMessage({ id: 'project.deleteFile' }),
@@ -191,6 +157,18 @@ export const FileList: FC<FileListProps> = ({
 
   /** 处理文件添加 */
   const handleFileAdd = (error: any, file: FilePondFile) => {
+    // 压缩包没有对应的单个文件项，上传完成后由服务器展开并刷新列表
+    if (isArchiveFilename(file.filename)) {
+      message.loading({
+        content: formatMessage(
+          { id: 'file.archiveUploading' },
+          { name: file.filename },
+        ),
+        key: file.id,
+        duration: 0,
+      });
+      return;
+    }
     // 加载预览图
     const realFile = file.file;
     if (/^image.+/.test(file.file.type)) {
@@ -281,6 +259,15 @@ export const FileList: FC<FileListProps> = ({
         error.default();
       });
   };
+  /** 重新加载当前页的文件，用于服务器展开压缩包之后 */
+  const reloadFiles = () => {
+    const spec = currentPageSpecRef.current;
+    if (!spec) {
+      return;
+    }
+    const [cancelToken] = getCancelToken();
+    loadPage({ ...spec, cancelToken });
+  };
   /*
 
   const startOCR = () => {
@@ -351,6 +338,28 @@ export const FileList: FC<FileListProps> = ({
             justify-content: flex-start;
           }
         }
+        ${isMobile &&
+        css`
+          .FileList__Header {
+            height: auto;
+            min-height: 45px;
+            flex-wrap: wrap;
+            row-gap: 4px;
+            padding-bottom: 4px;
+          }
+          .FileList__ChangeTargetButton {
+            flex: 1 1 100%;
+            min-width: 0;
+          }
+          .FileList__List {
+            .List__Items {
+              padding: 0 8px;
+            }
+            .List__Pagination {
+              padding: 8px 0;
+            }
+          }
+        `}
       `}
     >
       <Global
@@ -371,6 +380,7 @@ export const FileList: FC<FileListProps> = ({
         dropOnElement={false}
         allowMultiple
         maxParallelUploads={5}
+        acceptedFileTypes={SOURCE_FILE_ACCEPT}
         onaddfile={handleFileAdd}
         // 上传中
         onprocessfileprogress={(file, progress) => {
@@ -389,7 +399,17 @@ export const FileList: FC<FileListProps> = ({
         // 上传成功
         onprocessfile={(error, file) => {
           if (error) return;
-          const result = toLowerCamelCase(JSON.parse(file.serverId) as MFile);
+          const response = JSON.parse(file.serverId);
+          // 压缩包：服务器已展开其中的图片，汇总提示后刷新列表
+          if (isArchiveImportResult(response)) {
+            message.destroy(file.id);
+            const summary = emptySummary();
+            addArchiveResult(summary, toLowerCamelCase(response));
+            reportSourceSummary(formatMessage, summary);
+            reloadFiles();
+            return;
+          }
+          const result = toLowerCamelCase(response as MFile);
           setItems((items) => {
             // 覆盖时删除列表中原来的文件
             const itemsWithoutSameID = items.filter(
@@ -412,6 +432,16 @@ export const FileList: FC<FileListProps> = ({
         }}
         // 上传失败
         onerror={(error, file) => {
+          if (file && isArchiveFilename(file.filename)) {
+            message.destroy(file.id);
+            message.error(
+              `${file.filename}：${getReasonFromResponseBody(
+                error.body,
+                formatMessage({ id: 'file.importFailed' }),
+              )}`,
+            );
+            return;
+          }
           if (file && file.id) {
             setItems((items) =>
               items.map((item) => {
@@ -484,12 +514,14 @@ export const FileList: FC<FileListProps> = ({
         )}
         {can(project, PROJECT_PERMISSION.ADD_FILE) && (
           <Button
-            icon="folder-open"
+            icon="file-import"
             tooltipProps={{
               overlay: formatMessage({ id: 'file.serverImport' }),
             }}
-            onClick={openServerImport}
-          />
+            onClick={() => setServerImportVisible(true)}
+          >
+            {!isMobile && formatMessage({ id: 'file.import' })}
+          </Button>
         )}
         {can(project, PROJECT_PERMISSION.ADD_FILE) && (
           <Button
@@ -564,7 +596,7 @@ export const FileList: FC<FileListProps> = ({
         items={items}
         itemHeight={250}
         multiColumn
-        columnWidth={200}
+        columnWidth={isMobile ? 176 : 200}
         paginationProps={{
           disabled: spinningIDs.length > 0,
         }}
@@ -665,54 +697,20 @@ export const FileList: FC<FileListProps> = ({
           selectedFileIds={selectedFileIds}
         />
       </Drawer>
-      <Modal
-        title={formatMessage({ id: 'file.serverImport' })}
+      <ServerImportModal
         open={serverImportVisible}
-        okButtonProps={{ disabled: !serverArchivePath, loading: serverImporting }}
-        okText={formatMessage({ id: 'file.importServerArchive' })}
-        onOk={importServerArchive}
+        loadDirectory={(directory) =>
+          api.file
+            .getServerImportDirectory({ projectID: project.id, directory })
+            .then((result) => result.data)
+        }
         onCancel={() => setServerImportVisible(false)}
-      >
-        <AntdButton
-          disabled={!serverDirectory || serverDirectoryLoading}
-          onClick={() => loadServerDirectory(parentServerDirectory)}
-        >
-          {formatMessage({ id: 'file.serverImportParentDirectory' })}
-        </AntdButton>
-        <AntdButton
-          loading={serverDirectoryLoading}
-          onClick={() => loadServerDirectory(serverDirectory)}
-        >
-          {formatMessage({ id: 'file.refreshServerImportDirectory' })}
-        </AntdButton>
-        <div>{serverDirectory || '/'}</div>
-        {serverEntries.length === 0 && !serverDirectoryLoading ? (
-          <p>{formatMessage({ id: 'file.serverImportEmpty' })}</p>
-        ) : (
-          serverEntries.map((entry) => (
-            <div key={entry.path}>
-              {entry.type === 'directory' ? `${entry.name}/` : entry.name}
-              {entry.type === 'directory' ? (
-                <AntdButton onClick={() => loadServerDirectory(entry.path)}>
-                  {formatMessage({ id: 'file.openServerImportDirectory' })}
-                </AntdButton>
-              ) : (
-                <AntdButton
-                  disabled={
-                    !['.zip', '.cbz'].some((suffix) =>
-                      entry.name.toLowerCase().endsWith(suffix),
-                    )
-                  }
-                  type={serverArchivePath === entry.path ? 'primary' : 'default'}
-                  onClick={() => setServerArchivePath(entry.path)}
-                >
-                  {formatMessage({ id: 'file.selectServerArchive' })}
-                </AntdButton>
-              )}
-            </div>
-          ))
-        )}
-      </Modal>
+        onConfirm={(entries) =>
+          importSelectedServerArchives(entries.map((entry) => entry.path))
+        }
+        confirmLoading={serverImporting}
+        okText={formatMessage({ id: 'file.importServerArchive' })}
+      />
       {aiModalHolder}
     </div>
   );

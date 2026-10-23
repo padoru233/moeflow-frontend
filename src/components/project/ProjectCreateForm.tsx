@@ -15,8 +15,19 @@ import { GROUP_ALLOW_APPLY_TYPE } from '@/constants';
 import { configs } from '@/configs';
 import style from '@/style';
 import { resetFilesState } from '@/store/file/slice';
-import * as zip from '@zip.js/zip.js';
 import { RcFile } from 'antd/lib/upload';
+import { UploadFile } from 'antd/lib/upload/interface';
+import { ServerImportEntry } from '@/apis/file';
+import {
+  emptySummary,
+  importServerArchives,
+  reportSourceSummary,
+  SOURCE_FILE_ACCEPT,
+  uploadSourceFiles,
+} from '@/utils/sourceUpload';
+import { ServerImportModal } from './ServerImportModal';
+
+const SOURCE_UPLOAD_MESSAGE_KEY = 'ProjectCreateForm__SourceUpload';
 
 /** 创建项目表单的属性接口 */
 interface ProjectCreateFormProps {
@@ -52,7 +63,9 @@ export const ProjectCreateForm: FC<ProjectCreateFormProps> = ({
   ]);
   const [supportLabelplusTXT, setSupportLabelplusTXT] = useState(true);
   const [labelplusTXT, setLabelplusTXT] = useState<string>();
-  const [sourceArchive, setSourceArchive] = useState<RcFile>();
+  const [sourceFiles, setSourceFiles] = useState<UploadFile[]>([]);
+  const [serverSources, setServerSources] = useState<ServerImportEntry[]>([]);
+  const [serverImportVisible, setServerImportVisible] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [formFinishValues, setFormFinishValues] = useState<any>();
 
@@ -70,37 +83,53 @@ export const ProjectCreateForm: FC<ProjectCreateFormProps> = ({
     setIsModalVisible(false);
   };
 
-  const uploadSourceArchive = async (projectID: string) => {
-    if (!sourceArchive) {
+  /**
+   * 项目创建后上传选择的图源
+   *
+   * 本地的 zip/cbz 整体上传一次由服务器展开，散图并发上传；
+   * 服务器上的压缩包直接由服务器读取。单个文件失败不影响其余文件。
+   */
+  const uploadSources = async (projectID: string) => {
+    const localFiles = sourceFiles
+      .map((file) => file.originFileObj)
+      .filter((file): file is RcFile => Boolean(file));
+    const total = localFiles.length + serverSources.length;
+    if (total === 0) {
       return;
     }
+    const failureFallback = formatMessage({ id: 'file.importFailed' });
+    const showProgress = (done: number) =>
+      message.loading({
+        content: formatMessage(
+          { id: 'project.sourcesUploading' },
+          { done, total },
+        ),
+        key: SOURCE_UPLOAD_MESSAGE_KEY,
+        duration: 0,
+      });
 
-    const archive = new zip.ZipReader(new zip.BlobReader(sourceArchive));
+    showProgress(0);
+    const summary = emptySummary();
     try {
-      const entries = await archive.getEntries();
-      const imageEntries = entries.filter(
-        (entry) =>
-          !entry.directory &&
-          /\.(avif|bmp|gif|jpe?g|png|webp)$/i.test(entry.filename),
-      );
-      if (imageEntries.length === 0) {
-        throw new Error('压缩包内没有可导入的图片');
-      }
-
-      for (const entry of imageEntries) {
-        const image = await entry.getData?.(new zip.BlobWriter());
-        if (!image) {
-          throw new Error(`无法读取压缩包内图片：${entry.filename}`);
-        }
-        const filename = entry.filename.split('/').pop();
-        if (!filename) {
-          throw new Error(`压缩包内图片名称无效：${entry.filename}`);
-        }
-        await api.project.uploadFile({ projectID, filename, file: image });
-      }
+      const local = await uploadSourceFiles({
+        projectID,
+        files: localFiles,
+        failureFallback,
+        onProgress: (done) => showProgress(done),
+      });
+      const server = await importServerArchives({
+        projectID,
+        archivePaths: serverSources.map((entry) => entry.path),
+        failureFallback,
+        onProgress: (done) => showProgress(localFiles.length + done),
+      });
+      summary.imported = local.imported + server.imported;
+      summary.overwritten = local.overwritten + server.overwritten;
+      summary.problems = [...local.problems, ...server.problems];
     } finally {
-      await archive.close();
+      message.destroy(SOURCE_UPLOAD_MESSAGE_KEY);
     }
+    reportSourceSummary(formatMessage, summary);
   };
 
   const handleFinish = (values: any) => {
@@ -121,11 +150,13 @@ export const ProjectCreateForm: FC<ProjectCreateFormProps> = ({
         dispatch(resetFilesState());
         dispatch(resetProjectsState());
         try {
-          await uploadSourceArchive(result.data.project.id);
           message.success(result.data.message);
+          await uploadSources(result.data.project.id);
         } catch (error) {
           message.error(
-            error instanceof Error ? error.message : '图源压缩包上传失败',
+            error instanceof Error
+              ? error.message
+              : formatMessage({ id: 'file.importFailed' }),
           );
         } finally {
           setSubmitting(false);
@@ -174,8 +205,36 @@ export const ProjectCreateForm: FC<ProjectCreateFormProps> = ({
           margin-top: 10px;
           height: 80px;
         }
-        .ProjectCreateForm__Archive {
+        .ProjectCreateForm__Sources {
           margin-bottom: 24px;
+        }
+        .ProjectCreateForm__SourcesHeader {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .ProjectCreateForm__SourceList {
+          max-height: 160px;
+          margin-top: 8px;
+          overflow-y: auto;
+          border: 1px solid #f0f0f0;
+        }
+        .ProjectCreateForm__SourceItem {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 8px 0 12px;
+          border-bottom: 1px solid #f0f0f0;
+          &:last-child {
+            border-bottom: none;
+          }
+        }
+        .ProjectCreateForm__SourceName {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
       `}
     >
@@ -308,30 +367,70 @@ export const ProjectCreateForm: FC<ProjectCreateFormProps> = ({
           {/* 用于提交 project set id */}
           <Input />
         </FormItem>
-        <div className="ProjectCreateForm__Archive">
-          <div className="ProjectCreateForm__TXTUpload">
+        <div className="ProjectCreateForm__Sources">
+          <div className="ProjectCreateForm__SourcesHeader">
             <div className="ProjectCreateForm__Label">
-              {formatMessage({ id: 'project.sourceArchive' })}
+              {formatMessage({ id: 'project.sourceImages' })}
             </div>
-            {sourceArchive ? (
-              <Button onClick={() => setSourceArchive(undefined)}>
-                {formatMessage({ id: 'site.delete' })}
+            <Upload
+              multiple
+              accept={SOURCE_FILE_ACCEPT.join(',')}
+              fileList={sourceFiles}
+              showUploadList={false}
+              beforeUpload={() => false}
+              onChange={({ fileList }) => setSourceFiles(fileList)}
+            >
+              <Button>
+                {formatMessage({ id: 'project.selectLocalSources' })}
               </Button>
-            ) : (
-              <Upload
-                accept=".zip,.cbz"
-                beforeUpload={(file) => {
-                  setSourceArchive(file);
-                  return false;
-                }}
-                maxCount={1}
-              >
-                <Button>{formatMessage({ id: 'site.upload' })}</Button>
-              </Upload>
-            )}
+            </Upload>
+            <Button onClick={() => setServerImportVisible(true)}>
+              {formatMessage({ id: 'project.selectServerSources' })}
+            </Button>
           </div>
-          {sourceArchive && (
-            <div className="ProjectCreateForm__Tip">{sourceArchive.name}</div>
+          <div className="ProjectCreateForm__Tip">
+            {formatMessage({ id: 'project.sourceImagesTip' })}
+          </div>
+          {(sourceFiles.length > 0 || serverSources.length > 0) && (
+            <div className="ProjectCreateForm__SourceList">
+              {sourceFiles.map((file) => (
+                <div className="ProjectCreateForm__SourceItem" key={file.uid}>
+                  <span className="ProjectCreateForm__SourceName">
+                    {file.name}
+                  </span>
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={() =>
+                      setSourceFiles((files) =>
+                        files.filter((item) => item.uid !== file.uid),
+                      )
+                    }
+                  >
+                    {formatMessage({ id: 'site.delete' })}
+                  </Button>
+                </div>
+              ))}
+              {serverSources.map((entry) => (
+                <div className="ProjectCreateForm__SourceItem" key={entry.path}>
+                  <span className="ProjectCreateForm__SourceName">
+                    {formatMessage({ id: 'project.serverSourceLabel' })}
+                    {entry.path}
+                  </span>
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={() =>
+                      setServerSources((sources) =>
+                        sources.filter((item) => item.path !== entry.path),
+                      )
+                    }
+                  >
+                    {formatMessage({ id: 'site.delete' })}
+                  </Button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
         <div className="ProjectCreateForm__TXT">
@@ -438,6 +537,25 @@ export const ProjectCreateForm: FC<ProjectCreateFormProps> = ({
           </ol>
         </div>
       </Modal>
+      <ServerImportModal
+        open={serverImportVisible}
+        loadDirectory={(directory) =>
+          api.file
+            .getTeamServerImportDirectory({ teamID: currentTeam.id, directory })
+            .then((result) => result.data)
+        }
+        onCancel={() => setServerImportVisible(false)}
+        onConfirm={(entries) => {
+          setServerSources((sources) => [
+            ...sources,
+            ...entries.filter(
+              (entry) => !sources.some((source) => source.path === entry.path),
+            ),
+          ]);
+          setServerImportVisible(false);
+        }}
+        okText={formatMessage({ id: 'project.addServerSources' })}
+      />
     </div>
   );
 };

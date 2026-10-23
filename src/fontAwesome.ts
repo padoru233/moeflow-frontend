@@ -61,6 +61,7 @@ import {
   faSave,
   faPaste,
   faFolderOpen,
+  faFileImport,
 } from '@fortawesome/free-solid-svg-icons';
 import { faKissWinkHeart as faKissWinkHeartRegular } from '@fortawesome/free-regular-svg-icons';
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
@@ -123,6 +124,7 @@ library.add(
     faSave,
     faPaste,
     faFolderOpen,
+    faFileImport,
   ],
   // Regular icons
   ...[faKissWinkHeartRegular],

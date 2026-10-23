@@ -12,7 +12,43 @@ export interface ServerImportEntry {
   name: string;
   path: string;
   type: 'directory' | 'file';
+  /** 压缩包大小（字节），目录没有此字段 */
+  size?: number;
 }
+
+export interface ServerImportDirectory {
+  /** 服务器是否配置了可导入的目录 */
+  enabled: boolean;
+  directory: string;
+  entries: ServerImportEntry[];
+}
+
+export interface ArchiveImportProblem {
+  name: string;
+  reason: string;
+}
+
+/** 上传 zip/cbz 压缩包后，服务器展开其中图片的结果 */
+export interface ArchiveImportResult {
+  archive: true;
+  name: string;
+  imported: number;
+  /** 其中覆盖了项目里同名图片的数量 */
+  overwritten: number;
+  /** 压缩包里与图源无关的文件（文本、系统垃圾文件等）数量 */
+  ignored: number;
+  /** 图片格式暂不支持、体积过大等被跳过的图片 */
+  skipped: ArchiveImportProblem[];
+  /** 读取或保存失败的图片 */
+  failed: ArchiveImportProblem[];
+}
+
+/** 上传文件的结果：图片返回文件本身，压缩包返回展开结果 */
+export type UploadFileResult = File | ArchiveImportResult;
+
+export const isArchiveImportResult = (
+  result: UploadFileResult,
+): result is ArchiveImportResult => 'archive' in result && result.archive;
 
 const getServerImportDirectory = ({
   projectID,
@@ -21,9 +57,23 @@ const getServerImportDirectory = ({
   projectID: string;
   directory?: string;
 }) =>
-  request<{ directory: string; entries: ServerImportEntry[] }>({
+  request<ServerImportDirectory>({
     method: 'GET',
     url: `/v1/projects/${projectID}/server-imports`,
+    params: { directory },
+  });
+
+/** 新建项目时浏览服务器上的图源，此时项目还不存在，所以按团队请求 */
+const getTeamServerImportDirectory = ({
+  teamID,
+  directory,
+}: {
+  teamID: string;
+  directory?: string;
+}) =>
+  request<ServerImportDirectory>({
+    method: 'GET',
+    url: `/v1/teams/${teamID}/server-imports`,
     params: { directory },
   });
 
@@ -34,7 +84,7 @@ const importServerArchive = ({
   projectID: string;
   archivePath: string;
 }) => {
-  return request<{ files: File[] }>({
+  return request<ArchiveImportResult>({
     method: 'POST',
     url: `/v1/projects/${projectID}/server-imports`,
     data: `archive_path=${encodeURIComponent(archivePath)}`,
@@ -149,6 +199,7 @@ const adminSafeCheck = ({
 
 export default {
   getServerImportDirectory,
+  getTeamServerImportDirectory,
   importServerArchive,
   getProjectFiles,
   getFile,

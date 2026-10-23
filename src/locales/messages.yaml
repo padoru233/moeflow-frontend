@@ -563,12 +563,12 @@ project.startImport:
 file.serverImport:
   zhCn: 从服务器导入图源
   en: Import image sources from server
+file.import:
+  zhCn: 导入
+  en: Import
 file.importServerArchive:
   zhCn: 导入图源
   en: Import image sources
-file.selectServerArchive:
-  zhCn: 选择压缩包
-  en: Select archive
 file.serverImportParentDirectory:
   zhCn: 上级目录
   en: Parent directory
@@ -576,11 +576,50 @@ file.openServerImportDirectory:
   zhCn: 打开
   en: Open
 file.serverImportEmpty:
-  zhCn: 此目录为空
-  en: This directory is empty
+  zhCn: 此目录下没有压缩包
+  en: No archives in this directory
 file.refreshServerImportDirectory:
   zhCn: 刷新目录
   en: Refresh directory
+file.serverImportDisabled:
+  zhCn: 服务器没有配置可导入的目录，请联系管理员设置 MOEFLOW_IMPORT_DIRECTORY。
+  en: The server has no import directory configured. Please ask an administrator to set MOEFLOW_IMPORT_DIRECTORY.
+file.importFailed:
+  zhCn: 导入失败
+  en: Import failed
+file.archiveUploading:
+  zhCn: 正在上传并展开「{name}」，请勿关闭页面…
+  en: Uploading and extracting "{name}". Please keep this page open…
+file.archiveImported:
+  zhCn: 已导入 {count} 张图片
+  en: Imported {count} images
+file.archiveOverwritten:
+  zhCn: ，其中 {count} 张覆盖了同名图片
+  en: ', {count} of which replaced images with the same name'
+file.archiveProblems:
+  zhCn: 有 {count} 个文件未能导入：{details}
+  en: '{count} files could not be imported: {details}'
+project.sourceImages:
+  zhCn: 图源
+  en: Image sources
+project.sourceImagesTip:
+  zhCn: 可选择图片，或 ZIP / CBZ 压缩包（服务器会自动展开其中的图片）。项目创建后开始上传。
+  en: Choose images, or ZIP / CBZ archives (the server extracts the images in them). Uploading starts after the project is created.
+project.selectLocalSources:
+  zhCn: 选择本地文件
+  en: Select local files
+project.selectServerSources:
+  zhCn: 从服务器选择
+  en: Select from server
+project.serverSourceLabel:
+  zhCn: 服务器：
+  en: 'Server: '
+project.addServerSources:
+  zhCn: 添加
+  en: Add
+project.sourcesUploading:
+  zhCn: 正在上传图源（{done}/{total}），请勿关闭页面…
+  en: Uploading image sources ({done}/{total}). Please keep this page open…
 project.finishTip:
   zhCn: 此操作将删除此项目的所有文件和图片。
   en: This action will delete all files and images for this item.
@@ -674,12 +713,12 @@ file.uploadFail:
   zhCn: '{name} 上传失败'
   en: '"{name} upload failed"'
 file.uploadTip1:
-  zhCn: 支持单个或批量文件上传，目前支持这些后缀的文件 .jpg, .jpeg, .png, .bmp, .gif, .webp（不区分大小写）
-  en: Supports single or multi file uploads. Currently supports these file extensions: .jpg, .jpeg, .png, .bmp, .gif, .webp (case insensitive).
+  zhCn: 支持单个或批量文件上传，目前支持这些后缀的文件 .jpg, .jpeg, .png, .bmp, .gif, .webp, .zip, .cbz（不区分大小写）
+  en: Supports single or multi file uploads. Currently supports these file extensions: .jpg, .jpeg, .png, .bmp, .gif, .webp, .zip, .cbz (case insensitive).
 file.uploadTip2:
-  zhCn: 支持单个或批量文件上传，目前支持这些后缀的文件 .jpg, .jpeg, .png, .bmp, .gif（不区分大小写）
+  zhCn: 支持单个或批量文件上传，目前支持这些后缀的文件 .jpg, .jpeg, .png, .bmp, .gif, .zip, .cbz（不区分大小写）
   en: 'Supports single or multi file uploads. Currently supports these file extensions:
-    .jpg, .jpeg, .png, .bmp, .gif (case insensitive).'
+    .jpg, .jpeg, .png, .bmp, .gif, .zip, .cbz (case insensitive).'
 file.emptyTip:
   zhCn: 还没有文件，现在上传一个吧！
   en: No files yet, upload one now!
