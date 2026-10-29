@@ -165,6 +165,11 @@ const ImageTranslator: FC = () => {
       )}
       <ImageSourceViewer
         className="ImageTranslator__ImageSourceViewer"
+        project={
+          file && currentProject?.id === file.projectID
+            ? currentProject
+            : undefined
+        }
         file={file}
         sources={sources}
         targetID={targetID}

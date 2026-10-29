@@ -2,7 +2,7 @@ import { css, Global } from '@emotion/core';
 import { Button as AntdButton, Drawer, message, Modal, Spin } from 'antd';
 import loadImage from 'blueimp-load-image';
 import classNames from 'classnames';
-import { useRef, useState } from 'react';
+import { ReactNode, useRef, useState } from 'react';
 import { FilePond } from 'react-filepond';
 import { useIntl } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
@@ -47,6 +47,7 @@ import { useAiTranslate } from '@/components/ai';
 interface FileListProps {
   project: Project;
   onChangeTargetClick?: () => void;
+  headerActions?: ReactNode;
   target: Target;
   className?: string;
 }
@@ -59,6 +60,7 @@ export const FileList: FC<FileListProps> = ({
   project,
   target,
   onChangeTargetClick,
+  headerActions,
   className,
 }) => {
   const { formatMessage } = useIntl(); // i18n
@@ -311,8 +313,33 @@ export const FileList: FC<FileListProps> = ({
         align-items: stretch;
         .FileList__Header {
           width: 100%;
-          height: 45px;
+          min-height: 45px;
+          padding: 8px 16px;
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
           flex: none;
+        }
+        .FileList__HeaderActions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-left: auto;
+        }
+        .FileList__ChangeTargetButton {
+          padding: 0;
+          border: 0;
+          background: transparent;
+          border-radius: 4px;
+          .Button__Content {
+            padding: 0 8px;
+            font-size: 12px;
+            font-weight: normal;
+          }
+          .Button__Icon {
+            margin-right: 6px;
+          }
         }
         .FileList__SubHeader {
         }
@@ -328,16 +355,6 @@ export const FileList: FC<FileListProps> = ({
         .FileList__FileItem {
           margin: 0 auto;
         }
-        .FileList__Header {
-          display: flex;
-          justify-content: stretch;
-        }
-        .FileList__ChangeTargetButton {
-          flex: auto;
-          .Button__Content {
-            justify-content: flex-start;
-          }
-        }
         ${isMobile &&
         css`
           .FileList__Header {
@@ -346,10 +363,6 @@ export const FileList: FC<FileListProps> = ({
             flex-wrap: wrap;
             row-gap: 4px;
             padding-bottom: 4px;
-          }
-          .FileList__ChangeTargetButton {
-            flex: 1 1 100%;
-            min-width: 0;
           }
           .FileList__List {
             .List__Items {
@@ -466,15 +479,18 @@ export const FileList: FC<FileListProps> = ({
       <div className="FileList__Header">
         <Button
           className="FileList__ChangeTargetButton"
+          size="sm"
+          elem="button"
+          tooltipProps={{
+            overlay: formatMessage({ id: 'project.changeTarget' }),
+          }}
           icon="exchange-alt"
           iconProps={{
             style: { height: '16px', width: '16px' },
           }}
           onClick={onChangeTargetClick}
         >
-          {(!isMobile
-            ? formatMessage({ id: 'project.changeTarget' }) + ' - '
-            : '') + target?.language.i18nName}
+          {target.language.i18nName}
         </Button>
         {aiEnabled && aiTranslateApi && (
           <Button
@@ -532,6 +548,9 @@ export const FileList: FC<FileListProps> = ({
           >
             {!isMobile && formatMessage({ id: 'site.upload' })}
           </Button>
+        )}
+        {headerActions && (
+          <div className="FileList__HeaderActions">{headerActions}</div>
         )}
       </div>
       {selectedFileIds.length > 0 && (

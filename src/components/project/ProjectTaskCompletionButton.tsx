@@ -22,10 +22,8 @@ export const ProjectTaskCompletionButton: FC<
 > = ({ project }) => {
   const { formatMessage } = useIntl();
   const [loading, setLoading] = useState(false);
-  const currentTeam = useSelector(
-    (state: AppState) => state.team.currentTeam,
-  );
-  const team = currentTeam ?? project.team;
+  const currentTeam = useSelector((state: AppState) => state.team.currentTeam);
+  const team = currentTeam?.id === project.team.id ? currentTeam : project.team;
 
   if (
     !team.robotWebhookEnabled ||
@@ -50,7 +48,7 @@ export const ProjectTaskCompletionButton: FC<
   };
 
   return (
-    <Button type="primary" onClick={completeCurrentTask} loading={loading}>
+    <Button onClick={completeCurrentTask} loading={loading}>
       {formatMessage({ id: 'project.completeCurrentTask' })}
     </Button>
   );

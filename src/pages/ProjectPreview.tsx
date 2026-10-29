@@ -15,6 +15,7 @@ import { editProject, setCurrentProject } from '@/store/project/slice';
 import style from '../style';
 import { toLowerCamelCase } from '@/utils';
 import { cardActiveEffect, cardClickEffect, clickEffect } from '@/utils/style';
+import { TermBankButton } from '@/components/project/TermBankButton';
 
 /** 团队设置页的属性接口 */
 interface ProjectPreviewProps {
@@ -137,6 +138,13 @@ const ProjectPreview: FC<ProjectPreviewProps> = ({
       css={css`
         height: 100%;
         width: 100%;
+        position: relative;
+        .ProjectPreview__TermBank {
+          position: absolute;
+          top: 12px;
+          right: 16px;
+          z-index: 2;
+        }
         &.ProjectPreview--empty {
           display: flex;
           flex-direction: column;
@@ -251,6 +259,9 @@ const ProjectPreview: FC<ProjectPreviewProps> = ({
         }
       `}
     >
+      <div className="ProjectPreview__TermBank">
+        <TermBankButton project={project} />
+      </div>
       {items.length === 0 && (
         <div className="ProjectPreview__EmptyTip">
           {formatMessage({ id: 'projectPreview.empty' })}

@@ -11,6 +11,7 @@ import {
 import ProjectFiles from './ProjectFiles';
 import ProjectPreview from './ProjectPreview';
 import ProjectSetting from './ProjectSetting';
+import TermBanks from './TermBanks';
 
 /** 项目路由的属性接口 */
 interface ProjectProps {}
@@ -48,6 +49,15 @@ const Project: FC<ProjectProps> = () => {
             team={currentTeam}
             projectSet={currentProjectSet}
             project={currentProject}
+          />
+        )}
+      </Route>
+      <Route path={`${path}/term-banks`}>
+        {currentProject?.id === projectID && (
+          <TermBanks
+            project={currentProject}
+            teamID={currentProject.team.id}
+            projectSetID={currentProject.projectSet.id}
           />
         )}
       </Route>

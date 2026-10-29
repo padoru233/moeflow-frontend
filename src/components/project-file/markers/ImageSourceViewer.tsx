@@ -1,7 +1,8 @@
 import { css } from '@emotion/core';
 import classNames from 'classnames';
 import { useSelector } from 'react-redux';
-import { FC, File } from '@/interfaces';
+import { FC, File, Project } from '@/interfaces';
+import { TermBankButton } from '@/components/project/TermBankButton';
 import { Source as ISource } from '@/interfaces/source';
 import { AppState } from '@/store';
 import { TranslationSaveFailed } from './TranslationSaveFailed';
@@ -15,6 +16,7 @@ import { ImageSourceViewerModeControl } from '@/components/project-file/markers/
 /** 原文列表的属性接口 */
 interface ImageSourceViewerProps {
   file?: File;
+  project?: Project;
   sources: ISource[];
   targetID: string;
   loading: boolean;
@@ -25,6 +27,7 @@ interface ImageSourceViewerProps {
  */
 export const ImageSourceViewer: FC<ImageSourceViewerProps> = ({
   file,
+  project,
   sources,
   targetID,
   loading,
@@ -42,13 +45,20 @@ export const ImageSourceViewer: FC<ImageSourceViewerProps> = ({
         background: #fff;
         display: flex;
         flex-direction: column;
+        .ImageSourceViewer__Actions {
+          display: flex;
+          justify-content: flex-end;
+          padding: 8px;
+        }
         .ImageSourceViewer__List {
           width: 100%;
-          height: 100%;
+          flex: 1;
+          min-height: 0;
         }
         .ImageSourceViewer__Empty {
           width: 100%;
-          height: 100%;
+          flex: 1;
+          min-height: 0;
           display: flex;
           flex-direction: column;
           justify-content: center;
@@ -56,6 +66,11 @@ export const ImageSourceViewer: FC<ImageSourceViewerProps> = ({
         }
       `}
     >
+      {project && (
+        <div className="ImageSourceViewer__Actions">
+          <TermBankButton project={project} targetID={targetID} />
+        </div>
+      )}
       {/* TODO: 将这里的 Spin 改成占位符 */}
       {!loading && (
         <>

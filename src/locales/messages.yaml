@@ -714,7 +714,7 @@ file.uploadFail:
   en: '"{name} upload failed"'
 file.uploadTip1:
   zhCn: 支持单个或批量文件上传，目前支持这些后缀的文件 .jpg, .jpeg, .png, .bmp, .gif, .webp, .zip, .cbz（不区分大小写）
-  en: Supports single or multi file uploads. Currently supports these file extensions: .jpg, .jpeg, .png, .bmp, .gif, .webp, .zip, .cbz (case insensitive).
+  en: "Supports single or multi file uploads. Currently supports these file extensions: .jpg, .jpeg, .png, .bmp, .gif, .webp, .zip, .cbz (case insensitive)."
 file.uploadTip2:
   zhCn: 支持单个或批量文件上传，目前支持这些后缀的文件 .jpg, .jpeg, .png, .bmp, .gif, .zip, .cbz（不区分大小写）
   en: 'Supports single or multi file uploads. Currently supports these file extensions:
@@ -1395,3 +1395,122 @@ admin.imageModeration:
 admin.captchas:
   zhCn: 验证码
   en: Captchas
+
+terms.title:
+  zhCn: "术语库"
+  en: "Term banks"
+
+terms.description:
+  zhCn: "统一项目中人名、地名和专有名词的译法。"
+  en: "Keep names and terminology consistent across your team."
+
+terms.bankName:
+  zhCn: "术语库名称"
+  en: "Term bank name"
+
+terms.languages:
+  zhCn: "语言"
+  en: "Languages"
+
+terms.note:
+  zhCn: "备注"
+  en: "Note"
+
+terms.actions:
+  zhCn: "操作"
+  en: "Actions"
+
+terms.edit:
+  zhCn: "编辑"
+  en: "Edit"
+
+terms.delete:
+  zhCn: "删除"
+  en: "Delete"
+
+terms.source:
+  zhCn: "原文"
+  en: "Source"
+
+terms.target:
+  zhCn: "译名"
+  en: "Translation"
+
+terms.addTerm:
+  zhCn: "添加词条"
+  en: "Add term"
+
+terms.addBank:
+  zhCn: "新建术语库"
+  en: "Create term bank"
+
+terms.bankForm:
+  zhCn: "术语库设置"
+  en: "Term bank"
+
+terms.termForm:
+  zhCn: "词条"
+  en: "Term"
+
+terms.sourceLanguage:
+  zhCn: "原语言"
+  en: "Source language"
+
+terms.targetLanguage:
+  zhCn: "目标语言"
+  en: "Target language"
+
+terms.differentLanguages:
+  zhCn: "原语言和目标语言不能相同"
+  en: "Source and target languages must differ"
+
+terms.search:
+  zhCn: "搜索原文、译名或备注"
+  en: "Search source, translation or note"
+
+terms.saved:
+  zhCn: "保存成功"
+  en: "Saved successfully"
+
+terms.deleted:
+  zhCn: "删除成功"
+  en: "Deleted successfully"
+
+terms.deleteConfirm:
+  zhCn: "确定删除吗？"
+  en: "Delete this item?"
+
+terms.projectSet:
+  zhCn: 所属项目集
+  en: Project set
+terms.unassigned:
+  zhCn: 未归属项目集
+  en: Unassigned
+
+terms.settings:
+  zhCn: "术语库设置"
+  en: "Glossary settings"
+
+terms.deleteBank:
+  zhCn: "删除术语库"
+  en: "Delete glossary"
+
+terms.deleteBankWarning:
+  zhCn: "将删除该术语库及全部术语，项目集内所有项目都会受影响，且无法恢复。"
+  en: "This deletes the glossary and all its terms for every project in the project set. This cannot be undone."
+
+terms.deleteTermWarning:
+  zhCn: "该术语将从共享术语库中删除，且无法恢复。"
+  en: "This term will be removed from the shared glossary. This cannot be undone."
+
+terms.save:
+  zhCn: "保存"
+  en: "Save"
+
+terms.searchBanks:
+  zhCn: "搜索术语库、原文、译文或备注"
+  en: "Search glossaries, source text, translations or notes"
+
+terms.noBanksFound:
+  zhCn: "没有找到匹配的术语库"
+  en: "No matching glossaries"

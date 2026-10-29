@@ -233,6 +233,10 @@ const finishProject = ({
   });
 };
 
+type TaskCompletionResult =
+  | { delivered: true }
+  | { delivered: false; error: string };
+
 /** 提交当前项目角色的任务完成状态 */
 const completeProjectTask = ({
   id,
@@ -241,7 +245,7 @@ const completeProjectTask = ({
   id: string;
   configs?: AxiosRequestConfig;
 }) => {
-  return request({
+  return request<TaskCompletionResult>({
     method: 'POST',
     url: `/v1/projects/${id}/task-completion`,
     ...configs,

@@ -29,6 +29,7 @@ import style from '../style';
 import { useTitle } from '../hooks';
 import { can } from '../utils/user';
 import ProjectSet from './ProjectSet';
+import TermBanks from './TermBanks';
 import ProjectSetSetting from './ProjectSetSetting';
 
 /** 团队页的属性接口 */
@@ -139,6 +140,10 @@ const Team: FC<TeamProps> = () => {
                 }
                 onRightButtonClick={handleRightButtonClick}
               />
+              <ListItem
+                name={formatMessage({ id: 'terms.title' })}
+                onClick={() => history.push(`${url}/term-banks`)}
+              />
               <ProjectSetList className="Team__ProjectSetList" />
             </div>
           )}
@@ -147,16 +152,27 @@ const Team: FC<TeamProps> = () => {
               <Switch>
                 {isMobile && (
                   <Route exact path={`${path}`}>
-                    <ProjectSetList
-                      className="Team__ProjectSetList"
-                      searchRightButton={
-                        can(currentTeam, TEAM_PERMISSION.CREATE_PROJECT_SET) &&
-                        rightButton
-                      }
-                      onSearchRightButtonClick={handleRightButtonClick}
-                    />
+                    <>
+                      <ListItem
+                        name={formatMessage({ id: 'terms.title' })}
+                        onClick={() => history.push(`${url}/term-banks`)}
+                      />
+                      <ProjectSetList
+                        className="Team__ProjectSetList"
+                        searchRightButton={
+                          can(
+                            currentTeam,
+                            TEAM_PERMISSION.CREATE_PROJECT_SET,
+                          ) && rightButton
+                        }
+                        onSearchRightButtonClick={handleRightButtonClick}
+                      />
+                    </>
                   </Route>
                 )}
+                <Route path={`${path}/term-banks`}>
+                  <TermBanks teamID={currentTeam.id} />
+                </Route>
                 <Route path={`${path}/create-project-set`}>
                   <Content
                     css={css`

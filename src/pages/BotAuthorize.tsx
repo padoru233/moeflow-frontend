@@ -15,7 +15,10 @@ const BotAuthorize: React.FC = () => {
   const location = useLocation();
   const token = useSelector((state: AppState) => state.user.token);
   const [error, setError] = useState<string | null>(null);
-  const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const query = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search],
+  );
   const clientId = getRequiredParameter(query, 'client_id');
   const redirectUri = getRequiredParameter(query, 'redirect_uri');
   const state = getRequiredParameter(query, 'state');
@@ -26,17 +29,21 @@ const BotAuthorize: React.FC = () => {
       return;
     }
 
+    let active = true;
+    setError(null);
     api.botAuthorization
       .createAuthorizationCode({
         data: { clientId, redirectUri, codeChallenge, token },
       })
       .then(({ data }) => {
+        if (!active) return;
         const callback = new URL(redirectUri);
         callback.searchParams.set('code', data.code);
         callback.searchParams.set('state', state);
         window.location.assign(callback.toString());
       })
       .catch((result) => {
+        if (!active) return;
         const detail = result?.data?.message;
         setError(
           `无法完成 Bot 授权：${
@@ -44,6 +51,9 @@ const BotAuthorize: React.FC = () => {
           }`,
         );
       });
+    return () => {
+      active = false;
+    };
   }, [clientId, codeChallenge, redirectUri, state, token]);
 
   if (!clientId || !redirectUri || !state || !codeChallenge) {

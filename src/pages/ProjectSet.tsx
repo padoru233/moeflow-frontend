@@ -28,6 +28,7 @@ import { setCurrentProjectSetSaga } from '@/store/projectSet/slice';
 import style from '../style';
 import { can } from '@/utils/user';
 import Project from './Project';
+import TermBanks from './TermBanks';
 import { ProjectCreateForm } from '@/components/project/ProjectCreateForm';
 import { ProjectImportForm } from '@/components/project/ProjectImportForm';
 
@@ -144,6 +145,10 @@ const ProjectSet: FC<ProjectSetProps> = () => {
                 }
                 onRightButtonClick={handleRightButtonClick}
               />
+              <ListItem
+                name={formatMessage({ id: 'terms.title' })}
+                onClick={() => history.push(`${url}/term-banks`)}
+              />
               <ProjectList className="ProjectSet__ProjectList" from="team" />
             </div>
           )}
@@ -152,17 +157,29 @@ const ProjectSet: FC<ProjectSetProps> = () => {
               <Switch>
                 {isMobile && (
                   <Route exact path={`${path}`}>
-                    <ProjectList
-                      className="ProjectSet__ProjectList"
-                      searchRightButton={
-                        can(currentTeam, TEAM_PERMISSION.CREATE_PROJECT) &&
-                        rightButton
-                      }
-                      onSearchRightButtonClick={handleRightButtonClick}
-                      from="team"
-                    />
+                    <>
+                      <ListItem
+                        name={formatMessage({ id: 'terms.title' })}
+                        onClick={() => history.push(`${url}/term-banks`)}
+                      />
+                      <ProjectList
+                        className="ProjectSet__ProjectList"
+                        searchRightButton={
+                          can(currentTeam, TEAM_PERMISSION.CREATE_PROJECT) &&
+                          rightButton
+                        }
+                        onSearchRightButtonClick={handleRightButtonClick}
+                        from="team"
+                      />
+                    </>
                   </Route>
                 )}
+                <Route path={`${path}/term-banks`}>
+                  <TermBanks
+                    teamID={currentTeam.id}
+                    projectSetID={currentProjectSet.id}
+                  />
+                </Route>
                 <Route path={`${path}/create-project`}>
                   <Content
                     css={css`

@@ -69,7 +69,11 @@ export const ServerImportModal: FC<ServerImportModalProps> = ({
         setDirectory(result.directory);
         setEntries(result.entries);
       })
-      .catch((error) => error?.default?.())
+      .catch((error) => {
+        if (requestId === requestIdRef.current) {
+          error?.default?.();
+        }
+      })
       .finally(() => {
         if (requestId === requestIdRef.current) {
           setLoading(false);
@@ -82,6 +86,9 @@ export const ServerImportModal: FC<ServerImportModalProps> = ({
       setSelected({});
       load('');
     }
+    return () => {
+      requestIdRef.current += 1;
+    };
   }, [open]);
 
   const parentDirectory = directory.split('/').slice(0, -1).join('/');
@@ -197,7 +204,9 @@ export const ServerImportModal: FC<ServerImportModalProps> = ({
                         {entry.name}/
                       </span>
                       <Button size="small" onClick={() => load(entry.path)}>
-                        {formatMessage({ id: 'file.openServerImportDirectory' })}
+                        {formatMessage({
+                          id: 'file.openServerImportDirectory',
+                        })}
                       </Button>
                     </>
                   ) : (

@@ -18,6 +18,7 @@ import { ProjectFinishedTip } from '@/components/project/ProjectFinishedTip';
 import { ProjectTargetList } from '@/components/project/ProjectTargetList';
 import { ProjectImportFromLabelplusStatus } from '@/components/project/ProjectImportFromLabelplusStatus';
 import { ProjectTaskCompletionButton } from '@/components/project/ProjectTaskCompletionButton';
+import { TermBankButton } from '@/components/project/TermBankButton';
 
 /** 项目文件页的属性接口 */
 interface ProjectFilesProps {
@@ -43,7 +44,23 @@ const ProjectFiles: FC<ProjectFilesProps> = ({ project }) => {
 
   // 项目已完结返回提示
   if (project?.status === PROJECT_STATUS.FINISHED) {
-    return <ProjectFinishedTip />;
+    return (
+      <div
+        css={css`
+          width: 100%;
+          .project-actions {
+            display: flex;
+            justify-content: flex-end;
+            padding: 12px 16px;
+          }
+        `}
+      >
+        <div className="project-actions">
+          <TermBankButton project={project} targetID={currentTarget?.id} />
+        </div>
+        <ProjectFinishedTip />
+      </div>
+    );
   }
 
   if (!project) {
@@ -70,21 +87,19 @@ const ProjectFiles: FC<ProjectFilesProps> = ({ project }) => {
         flex: auto;
         display: flex;
         flex-direction: column;
+        .Project__TaskCompletion {
+          flex: none;
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+          padding: 12px 16px 0;
+        }
         .Project__ListItemTitle {
           width: 100%;
           flex: none;
           font-size: 13px;
           .ListItem__Logo {
             color: ${style.primaryColor};
-          }
-          .Project__TaskCompletion {
-            flex: none;
-            display: flex;
-            justify-content: flex-end;
-            padding: 12px 16px 0;
-          }
-          .Project__TaskCompletion:empty {
-            display: none;
           }
           .ListItem__Name {
             color: ${style.primaryColor};
@@ -101,6 +116,7 @@ const ProjectFiles: FC<ProjectFilesProps> = ({ project }) => {
       wrapper,
       undefined,
       <div className="Project__TaskCompletion">
+        <TermBankButton project={project} />
         <ProjectTaskCompletionButton project={project} />
       </div>,
       targets && (
@@ -157,6 +173,9 @@ const ProjectFiles: FC<ProjectFilesProps> = ({ project }) => {
     return cloneElement(
       wrapper,
       undefined,
+      <div className="Project__TaskCompletion">
+        <TermBankButton project={project} targetID={currentTarget?.id} />
+      </div>,
       <ProjectImportFromLabelplusStatus project={project} />,
     );
   }
@@ -164,10 +183,13 @@ const ProjectFiles: FC<ProjectFilesProps> = ({ project }) => {
   return cloneElement(
     wrapper,
     undefined,
-    <div className="Project__TaskCompletion">
-      <ProjectTaskCompletionButton project={project} />
-    </div>,
     <FileList
+      headerActions={
+        <>
+          <ProjectTaskCompletionButton project={project} />
+          <TermBankButton project={project} targetID={currentTarget?.id} />
+        </>
+      }
       project={project}
       target={currentTarget}
       onChangeTargetClick={() => {
